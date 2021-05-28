@@ -8,12 +8,16 @@ import com.quanlynhatre.service.DiemService;
 import com.quanlynhatre.service.SuckhoeService;
 import com.quanlynhatre.service.ThongkeService;
 import com.quanlynhatre.service.UserService;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 import javax.swing.ComboBoxModel;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerListModel;
@@ -21,6 +25,11 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+import org.apache.poi.sl.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -1210,6 +1219,7 @@ public class Home extends javax.swing.JFrame {
           if(dem==1 ){
                 diemService.insertdiem(ql_diem);
                 refresh_QLdiem();
+                refresh_tk();
             JOptionPane.showMessageDialog(this,"Thêm thành công","Thông báo", JOptionPane.INFORMATION_MESSAGE);}
 //         
          if(dem!=1 ){
@@ -1245,6 +1255,7 @@ public class Home extends javax.swing.JFrame {
                 userService.updateUser(user);
             }
         }
+        refresh_tk();
         refresh();
        
         
@@ -1277,6 +1288,16 @@ private void refresh_sk(){
                for (suckhoe sk : suckhoe) {
             defaultTableModel2.addRow(new Object[]{
                 sk.getMahs(),sk.getTenhs(),sk.getChieucao(), sk.getCannang(),sk.getTrangthai()
+            });
+        }
+}
+private void refresh_tk(){
+    defaultTableModeltk.setRowCount(0);
+    
+        List<Thongke> thongkes =  ThongkeService.getAlltk();
+        for (Thongke tk : thongkes) {
+            defaultTableModeltk.addRow(new Object[]{
+                tk.getMahs(),tk.getTenhs(),tk.getLop(),tk.getGioitinh(),tk.getNgaysinh(),tk.getDiem(),tk.getXeploai()
             });
         }
 }
@@ -1330,6 +1351,7 @@ private void refresh_sk(){
              refresh();
              refresh_QLdiem();
              refresh_sk();
+             refresh_tk();
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
@@ -1367,6 +1389,7 @@ private void refresh_sk(){
         }
        }
             refresh_QLdiem();
+            refresh_tk();
     }//GEN-LAST:event_jBt_xoa_dActionPerformed
 
     private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
@@ -1422,6 +1445,7 @@ private void refresh_sk(){
             }
         }
         refresh_QLdiem();
+        refresh_tk();
     }//GEN-LAST:event_jBt_sua_diemActionPerformed
 
     private void jTable3MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable3MouseClicked
@@ -1508,30 +1532,54 @@ private void refresh_sk(){
     }//GEN-LAST:event_user_refreshActionPerformed
 
     private void jButton_xuatfileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_xuatfileActionPerformed
-          try{
-        TableModel model = jTable_thongke.getModel();
-        FileWriter excel = new FileWriter("C:\\Users\\PC\\Documents\\javalt.csv");
-        for(int i = 0; i < model.getColumnCount(); i++){
-            excel.write(model.getColumnName(i) + "\t");
-           
-        }
-
-        excel.write("\n");
-
-        for(int i=0; i< model.getRowCount(); i++) {
-            for(int j=0; j < model.getColumnCount(); j++) {
-                excel.write(model.getValueAt(i,j).toString()+"\t");
-//                    System.out.print(model.getValueAt(i,j).toString());
-                    
-
+        try {
+ 
+            //Choosing Saving Location
+            //Set default location to C:\Users\Authentic\Desktop or your preferred location
+            JFileChooser excelFileChooser = new JFileChooser("C:\\Users\\Authentic\\Desktop");
+            excelFileChooser.showSaveDialog(this);
+            File saveFile=excelFileChooser.getSelectedFile();
+            if(saveFile!=null){
+                saveFile=new File(saveFile.toString()+".xlsx");
+                Workbook wb = new SXSSFWorkbook();
+                org.apache.poi.ss.usermodel.Sheet sheet = wb.createSheet("customer");
+                 
+                Row rowcol= sheet.createRow(0);
+                 for (int i = 0; i < jTable_thongke.getColumnCount(); i++){
+                     Cell cell=rowcol.createCell(i);
+                     cell.setCellValue(jTable_thongke.getColumnName(i));
+                     
+                 }
+                 for (int j = 0; j < jTable_thongke.getRowCount(); j++) {
+                    Row row=sheet.createRow(j);
+                    for (int k= 0; k < jTable_thongke.getColumnCount(); k++){
+                        Cell cell = row.createCell(k);
+                        if(jTable_thongke.getValueAt(j, k)!=null){
+                            cell.setCellValue(jTable_thongke.getValueAt(j, k).toString());
+                            
+                        }
+                        
+                    }
+                 }
+                 FileOutputStream out = new FileOutputStream(new File(saveFile.toString()));
+                 wb.write(out);
+                 wb.close();
+                 out.close();
+            JOptionPane.showMessageDialog(this,"Xuất thành công","Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                 
+                
+            }else
+            {
+                
             }
-            excel.write("\n");
-        }
-
-        excel.close();
-        JOptionPane.showMessageDialog(this,"Xuất fiel thành công","Thông báo", JOptionPane.INFORMATION_MESSAGE);
-
-    }catch(IOException e){ System.out.println(e); }
+        
+        } catch (FileNotFoundException ex) {
+            JOptionPane.showMessageDialog(null, ex);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(null, ex);
+        } 
+    
+    
     }//GEN-LAST:event_jButton_xuatfileActionPerformed
 
     private void jBt_tkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBt_tkActionPerformed
